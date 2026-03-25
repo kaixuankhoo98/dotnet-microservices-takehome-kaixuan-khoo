@@ -1,4 +1,4 @@
-﻿namespace BuildingBlocks.Messaging;
+﻿namespace BuildingBlocks.Messaging.Events;
 
 public record PaymentSucceededEvent
 {
