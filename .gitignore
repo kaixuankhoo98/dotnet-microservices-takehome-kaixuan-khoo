@@ -1,0 +1,7 @@
+dotnet-microservices-implementation-plan.md
+
+.vs/
+
+# build outputs
+**/bin/
+**/obj/
