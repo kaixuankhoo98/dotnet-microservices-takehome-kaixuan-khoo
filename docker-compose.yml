@@ -130,6 +130,26 @@ services:
       payment-service:
         condition: service_started
 
+  api-gateway:
+    build:
+      context: .
+      dockerfile: src/ApiGateway/Dockerfile
+    container_name: api-gateway
+    ports:
+      - "5000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Docker
+      ASPNETCORE_URLS: http://+:8080
+      DisableHttpsRedirection: "true"
+      Seq__ServerUrl: http://seq:80
+    depends_on:
+      order-service:
+        condition: service_started
+      payment-service:
+        condition: service_started
+      notification-service:
+        condition: service_started
+
 volumes:
   rabbitmq_data:
   sqlserver_data:
