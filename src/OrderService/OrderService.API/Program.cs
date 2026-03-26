@@ -26,6 +26,12 @@ builder.Services.AddScoped<IOrderAppService, OrderAppService>();
 
 var app = builder.Build();
 
+if (app.Configuration.GetValue("ApplyEfMigrations", false))
+{
+    using var scope = app.Services.CreateScope();
+    await scope.ServiceProvider.GetRequiredService<OrderDbContext>().Database.MigrateAsync();
+}
+
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseSerilogRequestLogging();
@@ -38,7 +44,10 @@ if (app.Environment.IsDevelopment())
     app.MapScalarApiReference();
 }
 
-app.UseHttpsRedirection();
+if (!app.Configuration.GetValue("DisableHttpsRedirection", false))
+{
+    app.UseHttpsRedirection();
+}
 
 app.MapControllers();
 

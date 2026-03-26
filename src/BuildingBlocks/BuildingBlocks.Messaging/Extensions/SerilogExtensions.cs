@@ -20,7 +20,8 @@ public static class SerilogExtensions
                     outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] [{ServiceName}] " +
                                     "[CorrelationId:{CorrelationId}] {Message:lj}{NewLine}{Exception}")
                 .WriteTo.Seq(
-                    context.Configuration["Serilog:WriteTo:1:Args:serverUrl"]
+                    context.Configuration["Seq:ServerUrl"]
+                    ?? context.Configuration["Serilog:WriteTo:1:Args:serverUrl"]
                     ?? "http://localhost:5341");
         });
 

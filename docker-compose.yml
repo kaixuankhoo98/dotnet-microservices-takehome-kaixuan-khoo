@@ -1,10 +1,19 @@
+# Local dev: infra + Order + Payment APIs (HTTP 8080 in container).
+# Scalar UI: http://localhost:5211/scalar/v1 (Order), http://localhost:5104/scalar/v1 (Payment) — paths may match your Scalar package version.
+# Seq UI: http://localhost:8081  |  RabbitMQ management: http://localhost:15672 (guest/guest)
+#
+# From repo root:
+#   docker compose up --build
+#
+# Connection strings below use Docker service names (sqlserver, rabbitmq, seq), not localhost.
+
 services:
   rabbitmq:
     image: rabbitmq:management-alpine
     container_name: rabbitmq
     ports:
-      - "5672:5672"   
-      - "15672:15672" # RabbitMQ management UI
+      - "5672:5672"
+      - "15672:15672"
     environment:
       RABBITMQ_DEFAULT_USER: guest
       RABBITMQ_DEFAULT_PASS: guest
@@ -15,7 +24,7 @@ services:
       retries: 5
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
-  
+
   sqlserver:
     image: mcr.microsoft.com/mssql/server:2022-latest
     container_name: sqlserver
@@ -29,7 +38,7 @@ services:
       interval: 10s
       timeout: 5s
       retries: 10
-      start_period: 30s 
+      start_period: 30s
     volumes:
       - sqlserver_data:/var/lib/mssql/data
 
@@ -38,7 +47,7 @@ services:
     container_name: seq
     ports:
       - "5341:5341"
-      - "8081:80" # Seq UI
+      - "8081:80"
     environment:
       ACCEPT_EULA: "Y"
       SEQ_FIRSTRUN_ADMINPASSWORD: "AdminPassword1!"
@@ -47,6 +56,54 @@ services:
       interval: 10s
       timeout: 5s
       retries: 5
+
+  order-service:
+    build:
+      context: .
+      dockerfile: src/OrderService/OrderService.API/Dockerfile
+    container_name: order-service
+    ports:
+      - "5211:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ApplyEfMigrations: "true"
+      DisableHttpsRedirection: "true"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=OrderDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
+      Seq__ServerUrl: http://seq:80
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: src/PaymentService/PaymentService.API/Dockerfile
+    container_name: payment-service
+    ports:
+      - "5104:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ApplyEfMigrations: "true"
+      DisableHttpsRedirection: "true"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=PaymentDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
+      Seq__ServerUrl: http://seq:80
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      order-service:
+        condition: service_started
 
 volumes:
   rabbitmq_data:
