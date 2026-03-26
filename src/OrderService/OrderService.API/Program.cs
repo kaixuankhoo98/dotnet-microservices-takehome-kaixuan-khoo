@@ -35,7 +35,6 @@ if (app.Configuration.GetValue("ApplyEfMigrations", false))
 app.UseMiddleware<GlobalExceptionHandlerMiddleware>();
 app.UseMiddleware<CorrelationIdMiddleware>();
 app.UseSerilogRequestLogging();
-//app.UseRateLimiter();
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())

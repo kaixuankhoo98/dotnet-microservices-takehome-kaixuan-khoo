@@ -1,5 +1,5 @@
-# Local dev: infra + Order + Payment APIs (HTTP 8080 in container).
-# Scalar UI: http://localhost:5211/scalar/v1 (Order), http://localhost:5104/scalar/v1 (Payment) — paths may match your Scalar package version.
+# Local dev: infra + Order + Payment + Notification APIs (HTTP 8080 in container).
+# Scalar UI: http://localhost:5211/scalar/v1 (Order), http://localhost:5104/scalar/v1 (Payment), http://localhost:5030/scalar/v1 (Notification) — paths may match your Scalar package version.
 # Seq UI: http://localhost:8081  |  RabbitMQ management: http://localhost:15672 (guest/guest)
 #
 # From repo root:
@@ -103,6 +103,31 @@ services:
       rabbitmq:
         condition: service_healthy
       order-service:
+        condition: service_started
+
+  notification-service:
+    build:
+      context: .
+      dockerfile: src/NotificationService/NotificationService.API/Dockerfile
+    container_name: notification-service
+    ports:
+      - "5030:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ApplyEfMigrations: "true"
+      DisableHttpsRedirection: "true"
+      ConnectionStrings__DefaultConnection: "Server=sqlserver,1433;Database=NotificationDb;User Id=sa;Password=YourStrong@Passw0rd;TrustServerCertificate=True;"
+      RabbitMq__Host: rabbitmq
+      RabbitMq__Username: guest
+      RabbitMq__Password: guest
+      Seq__ServerUrl: http://seq:80
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      payment-service:
         condition: service_started
 
 volumes:

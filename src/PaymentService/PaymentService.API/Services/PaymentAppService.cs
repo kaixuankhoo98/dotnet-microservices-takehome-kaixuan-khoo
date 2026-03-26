@@ -30,7 +30,7 @@ public class PaymentAppService : IPaymentAppService
         CancellationToken ct)
     {
         var existing = await this.paymentRepository.GetByOrderIdAsync(orderId, ct);
-        if (existing is not null)
+        if (existing != null)
         {
             this.logger.LogInformation(
                 "Payment already exists for Order {OrderId}, skipping publish",
@@ -81,9 +81,12 @@ public class PaymentAppService : IPaymentAppService
     {
         var payments = await this.paymentRepository.GetAllAsync(ct);
 
-        return payments.Select(Map).ToList();
+        return payments.Select(p => new PaymentResponseDto(
+                p.Id,
+                p.OrderId,
+                p.Amount,
+                p.CustomerEmail,
+                p.ProcessedAtUtc
+            )).ToList();
     }
-
-    private static PaymentResponseDto Map(Payment p) =>
-        new(p.Id, p.OrderId, p.Amount, p.CustomerEmail, p.ProcessedAtUtc);
 }

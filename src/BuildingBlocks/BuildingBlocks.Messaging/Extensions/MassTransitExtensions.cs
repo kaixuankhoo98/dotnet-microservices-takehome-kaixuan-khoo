@@ -1,4 +1,4 @@
-﻿using MassTransit;
+using MassTransit;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -10,7 +10,8 @@ public static class MassTransitExtensions
     public static IServiceCollection AddMessaging<TDbContext>(
         this IServiceCollection services,
         IConfiguration configuration,
-        Action<IBusRegistrationConfigurator>? configureConsumers = null
+        Action<IBusRegistrationConfigurator>? configureConsumers = null,
+        bool enableOutbox = true
     )
         where TDbContext : DbContext
     {
@@ -22,12 +23,15 @@ public static class MassTransitExtensions
             }
 
             // Add outbox for atomic db saving and publishing to queue
-            x.AddEntityFrameworkOutbox<TDbContext>(o =>
+            if (enableOutbox)
             {
-                o.UseSqlServer();
-                o.UseBusOutbox();
-                o.QueryDelay = TimeSpan.FromSeconds(1);
-            });
+                x.AddEntityFrameworkOutbox<TDbContext>(o =>
+                {
+                    o.UseSqlServer();
+                    o.UseBusOutbox();
+                    o.QueryDelay = TimeSpan.FromSeconds(1);
+                });
+            }
 
             // Rabbit MQ setup
             x.UsingRabbitMq((context, config) =>
