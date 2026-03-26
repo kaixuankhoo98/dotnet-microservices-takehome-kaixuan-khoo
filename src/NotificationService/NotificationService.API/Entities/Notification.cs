@@ -32,7 +32,7 @@ public class Notification
             PaymentId = paymentId,
             Amount = amount,
             CustomerEmail = customerEmail,
-            Message = $"Payment of {amount:C} for order {orderId} confirmed.",
+            Message = $"Payment of £{amount} for order {orderId} confirmed.",
             SentAtUtc = DateTime.UtcNow
         };
     }
