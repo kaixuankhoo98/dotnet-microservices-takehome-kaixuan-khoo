@@ -35,7 +35,7 @@ public class PaymentSucceededConsumer : IConsumer<PaymentSucceededEvent>
 
         this.logger.LogInformation(
             "Notification sent to {CustomerEmail}: " +
-            "Payment of {Amount:C} for Order {OrderId} confirmed",
+            "Payment of {Amount} for Order {OrderId} confirmed",
             message.CustomerEmail, 
             message.Amount, 
             message.OrderId);
