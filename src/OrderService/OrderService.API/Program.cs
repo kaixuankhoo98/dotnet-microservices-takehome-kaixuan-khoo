@@ -1,9 +1,9 @@
 using BuildingBlocks.Messaging.Extensions;
 using BuildingBlocks.Messaging.Middleware;
 using Microsoft.EntityFrameworkCore;
-using OrderService.API.Data;
-using OrderService.API.Repositories;
-using OrderService.API.Services;
+using OrderService.API.Application.Services;
+using OrderService.API.Infrastructure.Data;
+using OrderService.API.Infrastructure.Persistence.Repositories;
 using Scalar.AspNetCore;
 using Serilog;
 

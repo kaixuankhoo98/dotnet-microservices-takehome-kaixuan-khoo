@@ -1,10 +1,10 @@
 using BuildingBlocks.Messaging.Extensions;
 using BuildingBlocks.Messaging.Middleware;
 using Microsoft.EntityFrameworkCore;
-using PaymentService.API.Consumers;
-using PaymentService.API.Data;
-using PaymentService.API.Repositories;
-using PaymentService.API.Services;
+using PaymentService.API.Application.Services;
+using PaymentService.API.Infrastructure.Data;
+using PaymentService.API.Infrastructure.Messaging.Consumers;
+using PaymentService.API.Infrastructure.Persistence.Repositories;
 using Scalar.AspNetCore;
 using Serilog;
 

@@ -1,10 +1,10 @@
 using BuildingBlocks.Messaging.Extensions;
 using BuildingBlocks.Messaging.Middleware;
 using Microsoft.EntityFrameworkCore;
-using NotificationService.API.Consumers;
-using NotificationService.API.Data;
-using NotificationService.API.Repositories;
-using NotificationService.API.Services;
+using NotificationService.API.Application.Services;
+using NotificationService.API.Infrastructure.Data;
+using NotificationService.API.Infrastructure.Messaging.Consumers;
+using NotificationService.API.Infrastructure.Persistence.Repositories;
 using Scalar.AspNetCore;
 using Serilog;
 
