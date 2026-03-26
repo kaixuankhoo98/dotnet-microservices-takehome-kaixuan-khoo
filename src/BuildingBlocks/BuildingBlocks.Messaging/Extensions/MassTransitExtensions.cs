@@ -46,6 +46,12 @@ public static class MassTransitExtensions
                     h.Password(rabbitPassword);
                 });
 
+                // Configure retry intervals
+                config.UseMessageRetry(r => r.Intervals(
+                    TimeSpan.FromMilliseconds(500),
+                    TimeSpan.FromSeconds(1),
+                    TimeSpan.FromSeconds(5)));
+
                 config.ConfigureEndpoints(context);
             });
         });
