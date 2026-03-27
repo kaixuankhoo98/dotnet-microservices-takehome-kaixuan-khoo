@@ -5,12 +5,48 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using PaymentService.API.Application.Services;
 using PaymentService.API.Domain.Entities;
+using PaymentService.API.Infrastructure.Messaging.Consumers;
 using PaymentService.API.Infrastructure.Persistence.Repositories;
 
 namespace PaymentService.Tests;
 
 public class PaymentAppServiceTests
 {
+    [Fact]
+    public async Task OrderCreatedConsumer_WhenMessageIsInvalid_DoesNotCallProcessOrderCreatedAsync()
+    {
+        // Arrange
+        var message = new OrderCreatedEvent
+        {
+            OrderId = Guid.Empty,
+            Amount = 49.99m,
+            CustomerEmail = "customer@example.com",
+            CorrelationId = Guid.NewGuid(),
+            CreatedAtUtc = DateTime.UtcNow
+        };
+
+        var paymentAppService = new Mock<IPaymentAppService>();
+        var logger = new Mock<ILogger<OrderCreatedConsumer>>();
+        var context = new Mock<ConsumeContext<OrderCreatedEvent>>();
+        context.SetupGet(c => c.Message).Returns(message);
+        context.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
+
+        var sut = new OrderCreatedConsumer(paymentAppService.Object, logger.Object);
+
+        // Act
+        await sut.Consume(context.Object);
+
+        // Assert
+        paymentAppService.Verify(
+            service => service.ProcessOrderCreatedAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<decimal>(),
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     [Fact]
     public async Task ProcessOrderCreatedAsync_WhenPaymentAlreadyExists_ReturnsExistingPayment_DoesntCreateNewPayment()
     {

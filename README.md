@@ -119,6 +119,7 @@ I implemented a few reliability patterns to make the event-driven flow resilient
 - Outbox pattern (OrderService and PaymentService): The services that publish integration events use MassTransit's EF outbox, which stores outgoing messages in the same transaction as the database write. A background dispatcher then publishes from the outbox to RabbitMQ. This prevents data inconsistency if RabbitMQ is temporarily unavailable.
 - Message retries (consumer side): I configured MassTransit retry intervals (500ms → 1s → 5s) in `MassTransitExtensions`, so transient failures in consumers are retried automatically.
 - Consumer-side idempotency: If a duplicate event is delivered, repository checks + unique DB constraints prevent duplicate records (`OrderId` unique in PaymentService, `PaymentId` unique in NotificationService).
+- Consumer-side validation policy: Invalid event payloads are logged and skipped (instead of thrown) to avoid repeated retries of poison messages that will never succeed.
 
 ### Observability
 I added correlation IDs to make it easy to trace a single request across services:
@@ -151,10 +152,14 @@ I implemented unit tests across all three services using `xUnit`, `Moq`, and `Fl
     - Happy path when payment does not yet exist
     - Happy path for getting all payments
     - Duplicate `OrderCreatedEvent` scenario does not create a second payment
+    - `OrderCreatedConsumer` validation guard: invalid event payload does not call `ProcessOrderCreatedAsync`
 - `NotificationAppService`
     - Happy path when notification does not yet exist
     - Happy path for getting all notifications
     - Duplicate `PaymentSucceededEvent` scenario does not create a second notification
+    - `PaymentSucceededConsumer` validation guard: invalid event payload does not call `ProcessPaymentSucceededAsync`
+
+Consumer validation in this project intentionally logs-and-skips invalid events instead of throwing. The reason is to avoid retrying permanently invalid "poison" messages via MassTransit retry middleware, which would add noise and unnecessary processing while never succeeding. For this assignment scope, rejecting invalid messages at the consumer boundary and preserving service availability was the more practical trade-off.
 
 Run tests from the repository root with `dotnet test`.
 

@@ -20,6 +20,14 @@ public class PaymentSucceededConsumer : IConsumer<PaymentSucceededEvent>
     {
         var message = context.Message;
 
+        if (!IsValid(message, out var reason))
+        {
+            this.logger.LogInformation(
+                "Invalid Event. Reason={Reason}",
+                reason);
+            return;
+        }
+
         this.logger.LogInformation("Received PaymentSucceededEvent. CorrelationId={CorrelationId}, Order={OrderId}, Payment={PaymentId}",
             message.CorrelationId,
             message.OrderId, 
@@ -39,5 +47,31 @@ public class PaymentSucceededConsumer : IConsumer<PaymentSucceededEvent>
             message.CustomerEmail, 
             message.Amount, 
             message.OrderId);
+    }
+
+    private static bool IsValid(PaymentSucceededEvent message, out string reason)
+    {
+        if (message.OrderId == Guid.Empty)
+        {
+            reason = "OrderId is Empty";
+            return false;
+        }
+        if (message.PaymentId == Guid.Empty)
+        {
+            reason = "PaymentId is Empty";
+            return false;
+        }
+        if (message.Amount <= 0)
+        {
+            reason = "Amount must be greater than 0";
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(message.CustomerEmail))
+        {
+            reason = "CustomerEmail is required";
+            return false;
+        }
+        reason = string.Empty;
+        return true;
     }
 }

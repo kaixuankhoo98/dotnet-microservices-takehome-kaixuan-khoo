@@ -1,15 +1,55 @@
+using BuildingBlocks.Messaging.Events;
 using FluentAssertions;
+using MassTransit;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NotificationService.API.Application.Dtos;
 using NotificationService.API.Application.Services;
 using NotificationService.API.Domain.Entities;
+using NotificationService.API.Infrastructure.Messaging.Consumers;
 using NotificationService.API.Infrastructure.Persistence.Repositories;
 
 namespace NotificationService.Tests;
 
 public class NotificationAppServiceTests
 {
+    [Fact]
+    public async Task PaymentSucceededConsumer_WhenMessageIsInvalid_DoesNotCallProcessPaymentSucceededAsync()
+    {
+        // Arrange
+        var message = new PaymentSucceededEvent
+        {
+            OrderId = Guid.NewGuid(),
+            PaymentId = Guid.Empty,
+            Amount = 49.99m,
+            CustomerEmail = "customer@example.com",
+            CorrelationId = Guid.NewGuid(),
+            TimeStamp = DateTime.UtcNow
+        };
+
+        var notificationAppService = new Mock<INotificationAppService>();
+        var logger = new Mock<ILogger<PaymentSucceededConsumer>>();
+        var context = new Mock<ConsumeContext<PaymentSucceededEvent>>();
+        context.SetupGet(c => c.Message).Returns(message);
+        context.SetupGet(c => c.CancellationToken).Returns(CancellationToken.None);
+
+        var sut = new PaymentSucceededConsumer(notificationAppService.Object, logger.Object);
+
+        // Act
+        await sut.Consume(context.Object);
+
+        // Assert
+        notificationAppService.Verify(
+            service => service.ProcessPaymentSucceededAsync(
+                It.IsAny<Guid>(),
+                It.IsAny<Guid>(),
+                It.IsAny<decimal>(),
+                It.IsAny<string>(),
+                It.IsAny<Guid>(),
+                It.IsAny<CancellationToken>()),
+            Times.Never);
+    }
+
     [Fact]
     public async Task ProcessPaymentSucceededAsync_WhenNotificationAlreadyExists_ReturnsExistingNotification_AndDoesNotCreateNewNotification()
     {
