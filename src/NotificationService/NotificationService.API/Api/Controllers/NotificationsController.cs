@@ -16,7 +16,12 @@ namespace NotificationService.API.Api.Controllers
             this.notificationAppService = notificationAppService;
         }
 
+        /// <summary>
+        /// Gets all generated notifications.
+        /// </summary>
+        /// <response code="200">Returns the list of notifications.</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IReadOnlyCollection<NotificationResponseDto>), StatusCodes.Status200OK)]
         public async Task<ActionResult<IReadOnlyCollection<NotificationResponseDto>>> GetAllAsync(CancellationToken ct)
         {
             var notifications = await this.notificationAppService.GetAllNotificationsAsync(ct);
