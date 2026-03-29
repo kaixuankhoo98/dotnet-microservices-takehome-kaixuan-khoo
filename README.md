@@ -6,13 +6,13 @@ This project is a small microservices-based Order Processing System built in **.
 In this system, a client is able to initiate an "order creation", which triggers payment processing and notification delivery. This is achieved with 3 separate microservices: 
 - `OrderService` for order creation
 - `PaymentService` for payment processing
-- `NotificationService` for sending notifications. 
+- `NotificationService` for sending notifications
 
 Because of the architecture, services are independently deployable, and communicate asynchronously via events. I specifically avoided direct API calls between services, to avoid coupling.
 
 The tech stack for this project includes:
 - `C#/.NET 9` for the services
-- `xUnit` + `Moq` + `FluentAssertions` for Unit tests. 
+- `xUnit` + `Moq` + `FluentAssertions` for Unit tests
 - `RabbitMQ` for the message broker
 - `Serilog` with `Seq` for structured logging
 - `YARP` for the API Gateway
@@ -21,7 +21,7 @@ The tech stack for this project includes:
 
 Throughout this assignment, I prioritised clean layering, clear service boundaries, and maintainable code, with responsibilities separated across API, application, domain, and infrastructure layers. 
 
-On top of that, I added safety rails on the service level to accommodate for the event of network failures such as retries, idempotency and the outbox pattern - more details in [Design Decisions](#design-decisions). I prioritised these features over additional "production hardening" features such as authentication middleware, rate limiting, and including integration tests.
+On top of that, I added safety rails on the service level to accommodate for the event of network failures such as retries, idempotency and the outbox pattern (more details in [Design Decisions](#design-decisions)). I prioritised these features over additional "production hardening" features such as authentication middleware, rate limiting, and including integration tests.
 
 The rest of this README consists of a quick start guide, service URLs, event flow, design decisions, testing, limitations and future improvements.
 
