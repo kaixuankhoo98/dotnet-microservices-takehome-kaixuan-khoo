@@ -48,6 +48,18 @@ The easiest way to get this project running is using Docker. Please ensure you h
     Alternatively, check container status via Docker Desktop and ping `localhost:5000/health` (also check ports `5211`, `5104` and `5030`).
 
 3. Access the services through the API gateway (default is `localhost:5000`)
+
+    **Sample: create an order** — `POST http://localhost:5000/api/orders` with `Content-Type: application/json`:
+
+    ```json
+    {
+      "amount": 49.99,
+      "customerEmail": "user@example.com"
+    }
+    ```
+
+    `amount` must be greater than zero and `customerEmail` must be non-empty.
+
 4. A Postman collection is provided in `OrderProcessingSystem.postman_collection.json`, which can be imported directly into Postman to test the endpoints. 
 5. If you have a dotnet SDK installed, you can run `dotnet test` in the root of the project to run the unit tests.
 
@@ -104,7 +116,7 @@ I structured each service with API, Application, Domain, and Infrastructure laye
 
 There is also a shared BuildingBlocks class library, which allows contracts to be shared. This ensures that the microservices sharing `OrderCreatedEvent` and `PaymentSucceededEvent` do not encounter routing mismatches. 
 
-The NotificationsService notably has outbox disabled, because it is only a consumer of events, and never publishes.
+The NotificationService notably has outbox disabled, because it is only a consumer of events, and never publishes.
 
 The ApiGateway's `appsettings` points to the container names, and to localhost in the `appsettings.Development`.
 
@@ -172,3 +184,17 @@ This implementation focuses on clean architecture and a reliable end-to-end even
 - Add authentication/authorization for API endpoints.
 - Add request rate limiting and broader abuse protection.
 - Add integration tests covering API + RabbitMQ + database boundaries end-to-end.
+
+### Order lifecycle (draft direction)
+
+Today the order record is created in OrderService, but downstream success is only visible in PaymentService and NotificationService. A natural next step is to **persist an order status** (for example `Created` → `PaymentProcessing` → `Paid` or `PaymentFailed`) and **close the loop with events** so OrderService remains the source of truth for the order’s lifecycle.
+
+**How I would implement it**
+
+1. **Domain and API** – Add a `Status` (or small state machine) on `Order`, expose it on `GET /api/orders`, and set the initial status when the order is created (e.g. `Created` or `PaymentPending`).
+2. **Contracts** – Define outcome-focused integration message(s) in `BuildingBlocks` (either reuse `PaymentSucceededEvent` / add `PaymentFailedEvent`, or a single `PaymentCompletedEvent` with an outcome field) so OrderService can subscribe without calling PaymentService over HTTP.
+3. **PaymentService** – After a payment succeeds or fails, publish the appropriate event (the success path already exists; the failure path would mirror it so orders do not stall forever).
+4. **OrderService consumer** – Add a MassTransit consumer that updates the order by `OrderId` **idempotently** (ignore duplicates; allow only valid transitions, e.g. do not overwrite `Paid`).
+5. **Reliability** – Apply the same patterns as elsewhere: validate payloads at the consumer boundary, retries for transient errors, and logging/correlation IDs for tracing.
+
+This keeps services decoupled (still **no direct API calls** between OrderService and PaymentService) while making order state observable in one place for clients and support teams.
